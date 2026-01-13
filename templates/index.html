@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country Capital Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .capital-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .countries-list {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .countries-list h3 {
+            color: #333;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+
+        .countries-list h3:hover {
+            color: #667eea;
+        }
+
+        .list-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .list-container.show {
+            display: block;
+        }
+
+        .list-container span {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            margin: 3px;
+            border-radius: 15px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .list-container span:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Country Capital Finder</h1>
+
+        <div class="input-group">
+            <input type="text" id="countryInput" placeholder="Enter a country name..." autocomplete="off">
+        </div>
+
+        <button onclick="findCapital()">Find Capital</button>
+
+        <div id="result" class="result"></div>
+
+        <div class="countries-list">
+            <h3 onclick="toggleList()">Available Countries (click to show/hide)</h3>
+            <div id="countriesList" class="list-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load countries list on page load
+        window.onload = function() {
+            fetch('/get_countries')
+                .then(response => response.json())
+                .then(countries => {
+                    const container = document.getElementById('countriesList');
+                    countries.forEach(country => {
+                        const span = document.createElement('span');
+                        span.textContent = country;
+                        span.onclick = function() {
+                            document.getElementById('countryInput').value = country;
+                            findCapital();
+                        };
+                        container.appendChild(span);
+                    });
+                });
+        };
+
+        function toggleList() {
+            const list = document.getElementById('countriesList');
+            list.classList.toggle('show');
+        }
+
+        function findCapital() {
+            const country = document.getElementById('countryInput').value;
+            const resultDiv = document.getElementById('result');
+
+            if (!country.trim()) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = 'Please enter a country name.';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('country', country);
+
+            fetch('/get_capital', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `The capital of <strong>${data.country}</strong> is:<div class="capital-name">${data.capital}</div>`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = data.message;
+                }
+            })
+            .catch(error => {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = 'An error occurred. Please try again.';
+            });
+        }
+
+        // Allow Enter key to trigger search
+        document.getElementById('countryInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                findCapital();
+            }
+        });
+    </script>
+</body>
+</html>
