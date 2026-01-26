@@ -55,5 +55,21 @@ def get_capital():
 def get_countries():
     return jsonify(list(countries_capitals.keys()))
 
+@app.route('/add_capital', methods=['POST'])
+def add_capital():
+    country = request.form.get('country', '').strip()
+    capital = request.form.get('capital', '').strip()
+
+    if not country or not capital:
+        return jsonify({'success': False, 'message': 'Both country and capital are required.'}), 400
+
+    # Check if country already exists (case-insensitive)
+    for key in countries_capitals.keys():
+        if key.lower() == country.lower():
+            return jsonify({'success': False, 'message': f'Country "{key}" already exists with capital "{countries_capitals[key]}".'}), 409
+
+    countries_capitals[country] = capital
+    return jsonify({'success': True, 'message': f'Added {country} with capital {capital}.'}), 201
+
 if __name__ == '__main__':
     app.run(debug=True)

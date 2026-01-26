@@ -137,6 +137,31 @@
         .list-container span:hover {
             background: #764ba2;
         }
+
+        .divider {
+            height: 2px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 30px 0;
+            border-radius: 1px;
+        }
+
+        .add-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .add-section .input-group {
+            margin-bottom: 15px;
+        }
+
+        .add-section label {
+            display: block;
+            text-align: left;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -154,6 +179,22 @@
         <div class="countries-list">
             <h3 onclick="toggleList()">Available Countries (click to show/hide)</h3>
             <div id="countriesList" class="list-container"></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="add-section">
+            <h2>Add New Country</h2>
+            <div class="input-group">
+                <label for="newCountry">Country Name</label>
+                <input type="text" id="newCountry" placeholder="Enter country name...">
+            </div>
+            <div class="input-group">
+                <label for="newCapital">Capital City</label>
+                <input type="text" id="newCapital" placeholder="Enter capital city...">
+            </div>
+            <button onclick="addCapital()">Add Country</button>
+            <div id="addResult" class="result"></div>
         </div>
     </div>
 
@@ -218,6 +259,69 @@
         document.getElementById('countryInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 findCapital();
+            }
+        });
+
+        function addCapital() {
+            const country = document.getElementById('newCountry').value;
+            const capital = document.getElementById('newCapital').value;
+            const resultDiv = document.getElementById('addResult');
+
+            if (!country.trim() || !capital.trim()) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = 'Please enter both country and capital.';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('country', country);
+            formData.append('capital', capital);
+
+            fetch('/add_capital', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = data.message;
+                    document.getElementById('newCountry').value = '';
+                    document.getElementById('newCapital').value = '';
+                    refreshCountriesList();
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = data.message;
+                }
+            })
+            .catch(error => {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = 'An error occurred. Please try again.';
+            });
+        }
+
+        function refreshCountriesList() {
+            fetch('/get_countries')
+                .then(response => response.json())
+                .then(countries => {
+                    const container = document.getElementById('countriesList');
+                    container.innerHTML = '';
+                    countries.forEach(country => {
+                        const span = document.createElement('span');
+                        span.textContent = country;
+                        span.onclick = function() {
+                            document.getElementById('countryInput').value = country;
+                            findCapital();
+                        };
+                        container.appendChild(span);
+                    });
+                });
+        }
+
+        // Allow Enter key to trigger add
+        document.getElementById('newCapital').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addCapital();
             }
         });
     </script>
