@@ -168,5 +168,111 @@ def add_capital():
         }), 500  # 500 = Server Error
 
 
+@app.route('/update_capital', methods=['POST'])
+def update_capital():
+    """
+    Update the capital of an existing country.
+    
+    SQL: UPDATE countries SET capital = ? WHERE country = ?
+    
+    Example usage:
+        curl -X POST http://localhost:5000/update_capital \
+             -d "country=Japan&capital=New Tokyo"
+    """
+    country = request.form.get('country', '').strip()
+    new_capital = request.form.get('capital', '').strip()
+    
+    if not country or not new_capital:
+        return jsonify({
+            'success': False,
+            'message': 'Both country and new capital are required.'
+        }), 400
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # First check if country exists
+    cursor.execute('''
+        SELECT id, country, capital 
+        FROM countries 
+        WHERE LOWER(country) = LOWER(?)
+    ''', (country,))
+    
+    existing = cursor.fetchone()
+    
+    if not existing:
+        conn.close()
+        return jsonify({
+            'success': False,
+            'message': f'Country "{country}" not found.'
+        }), 404  # 404 = Not Found
+    
+    old_capital = existing['capital']
+    
+    # Update the capital
+    cursor.execute('''
+        UPDATE countries 
+        SET capital = ? 
+        WHERE id = ?
+    ''', (new_capital, existing['id']))
+    
+    conn.commit()  # Save changes
+    conn.close()
+    
+    return jsonify({
+        'success': True,
+        'message': f'Updated {existing["country"]}: {old_capital} → {new_capital}'
+    })
+
+
+@app.route('/delete_country', methods=['POST'])
+def delete_country():
+    """
+    Delete a country from the database.
+    
+    SQL: DELETE FROM countries WHERE country = ?
+    
+    Example usage:
+        curl -X POST http://localhost:5000/delete_country \
+             -d "country=Japan"
+    """
+    country = request.form.get('country', '').strip()
+    
+    if not country:
+        return jsonify({
+            'success': False,
+            'message': 'Country name is required.'
+        }), 400
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # First check if country exists
+    cursor.execute('''
+        SELECT id, country, capital 
+        FROM countries 
+        WHERE LOWER(country) = LOWER(?)
+    ''', (country,))
+    
+    existing = cursor.fetchone()
+    
+    if not existing:
+        conn.close()
+        return jsonify({
+            'success': False,
+            'message': f'Country "{country}" not found.'
+        }), 404
+    
+    # Delete the country
+    cursor.execute('DELETE FROM countries WHERE id = ?', (existing['id'],))
+    
+    conn.commit()  # Save changes
+    conn.close()
+    
+    return jsonify({
+        'success': True,
+        'message': f'Deleted {existing["country"]} (capital was {existing["capital"]})'
+    })
+
 if __name__ == '__main__':
     app.run(debug=True)
