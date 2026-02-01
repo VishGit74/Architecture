@@ -11,6 +11,34 @@ app = Flask(__name__)
 # --- DATABASE CONFIGURATION ---
 DATABASE_FILE = 'countries.db'
 
+# --- VALIDATION RULES ---
+MIN_LENGTH = 2
+MAX_LENGTH = 100
+
+
+def validate_input(value, field_name):
+    """
+    Validate a text input field.
+    
+    Returns:
+        (True, cleaned_value) if valid
+        (False, error_message) if invalid
+    """
+    # Check if empty
+    if not value or not value.strip():
+        return False, f'{field_name} cannot be empty.'
+    
+    cleaned = value.strip()
+    
+    # Check length
+    if len(cleaned) < MIN_LENGTH:
+        return False, f'{field_name} must be at least {MIN_LENGTH} characters.'
+    
+    if len(cleaned) > MAX_LENGTH:
+        return False, f'{field_name} must be less than {MAX_LENGTH} characters.'
+    
+    return True, cleaned
+
 
 def get_db_connection():
     """
@@ -39,17 +67,14 @@ def index():
 def get_capital():
     """
     Look up a capital city by country name.
-    
-    Old way (dictionary):
-        capital = countries_capitals.get(country)
-    
-    New way (database):
-        SELECT capital FROM countries WHERE country = ?
     """
-    country = request.form.get('country', '').strip()
+    country_raw = request.form.get('country', '')
     
-    if not country:
-        return jsonify({'success': False, 'message': 'Please enter a country name.'})
+    # Validate input
+    valid, result = validate_input(country_raw, 'Country')
+    if not valid:
+        return jsonify({'success': False, 'message': result}), 400
+    country = result
     
     # Connect to database
     conn = get_db_connection()
@@ -62,10 +87,7 @@ def get_capital():
         WHERE LOWER(country) = LOWER(?)
     ''', (country,))
     
-    # Note: (country,) is a tuple with one element
-    # The comma is required! (country) without comma is just parentheses
-    
-    row = cursor.fetchone()  # Get first matching row (or None)
+    row = cursor.fetchone()
     conn.close()
     
     if row:
@@ -85,18 +107,12 @@ def get_capital():
 def get_countries():
     """
     Return list of all countries.
-    
-    Old way (dictionary):
-        return jsonify(list(countries_capitals.keys()))
-    
-    New way (database):
-        SELECT country FROM countries ORDER BY country
     """
     conn = get_db_connection()
     cursor = conn.cursor()
     
     cursor.execute('SELECT country FROM countries ORDER BY country')
-    rows = cursor.fetchall()  # Get ALL rows as a list
+    rows = cursor.fetchall()
     
     conn.close()
     
@@ -110,21 +126,21 @@ def get_countries():
 def add_capital():
     """
     Add a new country-capital pair.
-    
-    Old way (dictionary):
-        countries_capitals[country] = capital
-    
-    New way (database):
-        INSERT INTO countries (country, capital) VALUES (?, ?)
     """
-    country = request.form.get('country', '').strip()
-    capital = request.form.get('capital', '').strip()
+    country_raw = request.form.get('country', '')
+    capital_raw = request.form.get('capital', '')
     
-    if not country or not capital:
-        return jsonify({
-            'success': False,
-            'message': 'Both country and capital are required.'
-        }), 400
+    # Validate country
+    valid, result = validate_input(country_raw, 'Country')
+    if not valid:
+        return jsonify({'success': False, 'message': result}), 400
+    country = result
+    
+    # Validate capital
+    valid, result = validate_input(capital_raw, 'Capital')
+    if not valid:
+        return jsonify({'success': False, 'message': result}), 400
+    capital = result
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -143,7 +159,7 @@ def add_capital():
         return jsonify({
             'success': False,
             'message': f'Country "{existing["country"]}" already exists with capital "{existing["capital"]}".'
-        }), 409  # 409 = Conflict
+        }), 409
     
     # Insert new country
     try:
@@ -152,41 +168,41 @@ def add_capital():
             VALUES (?, ?)
         ''', (country, capital))
         
-        conn.commit()  # Save the change! Without this, nothing is saved.
+        conn.commit()
         conn.close()
         
         return jsonify({
             'success': True,
             'message': f'Added {country} with capital {capital}.'
-        }), 201  # 201 = Created
+        }), 201
         
     except sqlite3.Error as e:
         conn.close()
         return jsonify({
             'success': False,
             'message': f'Database error: {str(e)}'
-        }), 500  # 500 = Server Error
+        }), 500
 
 
 @app.route('/update_capital', methods=['POST'])
 def update_capital():
     """
     Update the capital of an existing country.
-    
-    SQL: UPDATE countries SET capital = ? WHERE country = ?
-    
-    Example usage:
-        curl -X POST http://localhost:5000/update_capital \
-             -d "country=Japan&capital=New Tokyo"
     """
-    country = request.form.get('country', '').strip()
-    new_capital = request.form.get('capital', '').strip()
+    country_raw = request.form.get('country', '')
+    capital_raw = request.form.get('capital', '')
     
-    if not country or not new_capital:
-        return jsonify({
-            'success': False,
-            'message': 'Both country and new capital are required.'
-        }), 400
+    # Validate country
+    valid, result = validate_input(country_raw, 'Country')
+    if not valid:
+        return jsonify({'success': False, 'message': result}), 400
+    country = result
+    
+    # Validate capital
+    valid, result = validate_input(capital_raw, 'Capital')
+    if not valid:
+        return jsonify({'success': False, 'message': result}), 400
+    new_capital = result
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -205,7 +221,7 @@ def update_capital():
         return jsonify({
             'success': False,
             'message': f'Country "{country}" not found.'
-        }), 404  # 404 = Not Found
+        }), 404
     
     old_capital = existing['capital']
     
@@ -216,7 +232,7 @@ def update_capital():
         WHERE id = ?
     ''', (new_capital, existing['id']))
     
-    conn.commit()  # Save changes
+    conn.commit()
     conn.close()
     
     return jsonify({
@@ -229,20 +245,14 @@ def update_capital():
 def delete_country():
     """
     Delete a country from the database.
-    
-    SQL: DELETE FROM countries WHERE country = ?
-    
-    Example usage:
-        curl -X POST http://localhost:5000/delete_country \
-             -d "country=Japan"
     """
-    country = request.form.get('country', '').strip()
+    country_raw = request.form.get('country', '')
     
-    if not country:
-        return jsonify({
-            'success': False,
-            'message': 'Country name is required.'
-        }), 400
+    # Validate country
+    valid, result = validate_input(country_raw, 'Country')
+    if not valid:
+        return jsonify({'success': False, 'message': result}), 400
+    country = result
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -266,13 +276,14 @@ def delete_country():
     # Delete the country
     cursor.execute('DELETE FROM countries WHERE id = ?', (existing['id'],))
     
-    conn.commit()  # Save changes
+    conn.commit()
     conn.close()
     
     return jsonify({
         'success': True,
         'message': f'Deleted {existing["country"]} (capital was {existing["capital"]})'
     })
+
 
 if __name__ == '__main__':
     app.run(debug=True)
