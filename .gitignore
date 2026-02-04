@@ -36,3 +36,5 @@ Thumbs.db
 # AWS credentials (never commit these!)
 *.pem
 .aws/
+*.jpg
+downloaded-*.txt
