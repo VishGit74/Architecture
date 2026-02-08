@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Country Capital Finder</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -20,7 +15,6 @@
             align-items: center;
             padding: 20px;
         }
-
         .container {
             background: white;
             padding: 40px;
@@ -30,17 +24,8 @@
             max-width: 500px;
             width: 90%;
         }
-
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 2em;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
+        h1 { color: #333; margin-bottom: 30px; font-size: 2em; }
+        .input-group { margin-bottom: 20px; }
         input[type="text"] {
             width: 100%;
             padding: 15px 20px;
@@ -50,11 +35,7 @@
             outline: none;
             transition: border-color 0.3s;
         }
-
-        input[type="text"]:focus {
-            border-color: #667eea;
-        }
-
+        input[type="text"]:focus { border-color: #667eea; }
         button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -66,68 +47,42 @@
             transition: transform 0.2s, box-shadow 0.2s;
             margin: 5px;
         }
-
         button:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
         }
-
         button.danger {
             background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
         }
-
-        button.danger:hover {
-            box-shadow: 0 5px 20px rgba(229, 62, 62, 0.4);
-        }
-
         button.warning {
             background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
         }
-
-        button.warning:hover {
-            box-shadow: 0 5px 20px rgba(237, 137, 54, 0.4);
-        }
-
         .result {
             margin-top: 30px;
             padding: 20px;
             border-radius: 10px;
             display: none;
         }
-
-        .result.success {
-            background: #d4edda;
-            color: #155724;
-            display: block;
+        .result.success { background: #d4edda; color: #155724; display: block; }
+        .result.error { background: #f8d7da; color: #721c24; display: block; }
+        .capital-name { font-size: 1.5em; font-weight: bold; margin-top: 10px; }
+        .capital-image {
+            margin-top: 15px;
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
-
-        .result.error {
-            background: #f8d7da;
-            color: #721c24;
-            display: block;
+        .no-image {
+            margin-top: 15px;
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            color: #666;
+            font-style: italic;
         }
-
-        .capital-name {
-            font-size: 1.5em;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        .countries-list {
-            margin-top: 30px;
-            text-align: left;
-        }
-
-        .countries-list h3 {
-            color: #333;
-            margin-bottom: 15px;
-            cursor: pointer;
-        }
-
-        .countries-list h3:hover {
-            color: #667eea;
-        }
-
+        .countries-list { margin-top: 30px; text-align: left; }
+        .countries-list h3 { color: #333; margin-bottom: 15px; cursor: pointer; }
+        .countries-list h3:hover { color: #667eea; }
         .list-container {
             max-height: 200px;
             overflow-y: auto;
@@ -136,11 +91,7 @@
             border-radius: 10px;
             display: none;
         }
-
-        .list-container.show {
-            display: block;
-        }
-
+        .list-container.show { display: block; }
         .list-container span {
             display: inline-block;
             background: #667eea;
@@ -151,28 +102,14 @@
             font-size: 14px;
             cursor: pointer;
         }
-
-        .list-container span:hover {
-            background: #764ba2;
-        }
-
+        .list-container span:hover { background: #764ba2; }
         .divider {
             height: 2px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             margin: 30px 0;
-            border-radius: 1px;
         }
-
-        .section h2 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-
-        .section .input-group {
-            margin-bottom: 15px;
-        }
-
+        .section h2 { color: #333; margin-bottom: 20px; font-size: 1.5em; }
+        .section .input-group { margin-bottom: 15px; }
         .section label {
             display: block;
             text-align: left;
@@ -180,38 +117,27 @@
             color: #555;
             font-weight: 500;
         }
-
-        .button-group {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Country Capital Finder</h1>
 
-        <!-- SEARCH SECTION -->
         <div class="input-group">
             <input type="text" id="countryInput" placeholder="Enter a country name..." autocomplete="off">
         </div>
-
         <button onclick="findCapital()">Find Capital</button>
-
         <div id="result" class="result"></div>
 
         <div class="countries-list">
-            <h3 onclick="toggleList()">📋 Available Countries (click to show/hide)</h3>
+            <h3 onclick="toggleList()">Available Countries (click to show/hide)</h3>
             <div id="countriesList" class="list-container"></div>
         </div>
 
         <div class="divider"></div>
 
-        <!-- ADD SECTION -->
         <div class="section">
-            <h2>➕ Add New Country</h2>
+            <h2>Add New Country</h2>
             <div class="input-group">
                 <label for="newCountry">Country Name</label>
                 <input type="text" id="newCountry" placeholder="Enter country name...">
@@ -226,9 +152,8 @@
 
         <div class="divider"></div>
 
-        <!-- UPDATE SECTION -->
         <div class="section">
-            <h2>✏️ Update Capital</h2>
+            <h2>Update Capital</h2>
             <div class="input-group">
                 <label for="updateCountry">Country Name</label>
                 <input type="text" id="updateCountry" placeholder="Enter existing country...">
@@ -243,9 +168,8 @@
 
         <div class="divider"></div>
 
-        <!-- DELETE SECTION -->
         <div class="section">
-            <h2>🗑️ Delete Country</h2>
+            <h2>Delete Country</h2>
             <div class="input-group">
                 <label for="deleteCountry">Country Name</label>
                 <input type="text" id="deleteCountry" placeholder="Enter country to delete...">
@@ -256,14 +180,10 @@
     </div>
 
     <script>
-        // Load countries list on page load
-        window.onload = function() {
-            refreshCountriesList();
-        };
+        window.onload = function() { refreshCountriesList(); };
 
         function toggleList() {
-            const list = document.getElementById('countriesList');
-            list.classList.toggle('show');
+            document.getElementById('countriesList').classList.toggle('show');
         }
 
         function refreshCountriesList() {
@@ -297,31 +217,32 @@
             const formData = new FormData();
             formData.append('country', country);
 
-            fetch('/get_capital', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    resultDiv.className = 'result success';
-                    resultDiv.innerHTML = `The capital of <strong>${data.country}</strong> is:<div class="capital-name">${data.capital}</div>`;
-                } else {
+            fetch('/get_capital', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let html = `The capital of <strong>${data.country}</strong> is:
+                                    <div class="capital-name">${data.capital}</div>`;
+                        if (data.image_url) {
+                            html += `<img src="${data.image_url}" alt="${data.capital}" class="capital-image">`;
+                        } else {
+                            html += `<div class="no-image">No image available for ${data.capital}</div>`;
+                        }
+                        resultDiv.className = 'result success';
+                        resultDiv.innerHTML = html;
+                    } else {
+                        resultDiv.className = 'result error';
+                        resultDiv.innerHTML = data.message;
+                    }
+                })
+                .catch(error => {
                     resultDiv.className = 'result error';
-                    resultDiv.innerHTML = data.message;
-                }
-            })
-            .catch(error => {
-                resultDiv.className = 'result error';
-                resultDiv.innerHTML = 'An error occurred. Please try again.';
-            });
+                    resultDiv.innerHTML = 'An error occurred. Please try again.';
+                });
         }
 
-        // Allow Enter key to trigger search
         document.getElementById('countryInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                findCapital();
-            }
+            if (e.key === 'Enter') findCapital();
         });
 
         function addCapital() {
@@ -339,27 +260,21 @@
             formData.append('country', country);
             formData.append('capital', capital);
 
-            fetch('/add_capital', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    resultDiv.className = 'result success';
+            fetch('/add_capital', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    resultDiv.className = data.success ? 'result success' : 'result error';
                     resultDiv.innerHTML = data.message;
-                    document.getElementById('newCountry').value = '';
-                    document.getElementById('newCapital').value = '';
-                    refreshCountriesList();
-                } else {
+                    if (data.success) {
+                        document.getElementById('newCountry').value = '';
+                        document.getElementById('newCapital').value = '';
+                        refreshCountriesList();
+                    }
+                })
+                .catch(error => {
                     resultDiv.className = 'result error';
-                    resultDiv.innerHTML = data.message;
-                }
-            })
-            .catch(error => {
-                resultDiv.className = 'result error';
-                resultDiv.innerHTML = 'An error occurred. Please try again.';
-            });
+                    resultDiv.innerHTML = 'An error occurred. Please try again.';
+                });
         }
 
         function updateCapital() {
@@ -377,27 +292,20 @@
             formData.append('country', country);
             formData.append('capital', capital);
 
-            fetch('/update_capital', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    resultDiv.className = 'result success';
+            fetch('/update_capital', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    resultDiv.className = data.success ? 'result success' : 'result error';
                     resultDiv.innerHTML = data.message;
-                    document.getElementById('updateCountry').value = '';
-                    document.getElementById('updateCapital').value = '';
-                    refreshCountriesList();
-                } else {
+                    if (data.success) {
+                        document.getElementById('updateCountry').value = '';
+                        document.getElementById('updateCapital').value = '';
+                    }
+                })
+                .catch(error => {
                     resultDiv.className = 'result error';
-                    resultDiv.innerHTML = data.message;
-                }
-            })
-            .catch(error => {
-                resultDiv.className = 'result error';
-                resultDiv.innerHTML = 'An error occurred. Please try again.';
-            });
+                    resultDiv.innerHTML = 'An error occurred. Please try again.';
+                });
         }
 
         function deleteCountry() {
@@ -410,55 +318,35 @@
                 return;
             }
 
-            // Confirm before deleting
-            if (!confirm(`Are you sure you want to delete "${country}"?`)) {
-                return;
-            }
+            if (!confirm(`Are you sure you want to delete "${country}"?`)) return;
 
             const formData = new FormData();
             formData.append('country', country);
 
-            fetch('/delete_country', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    resultDiv.className = 'result success';
+            fetch('/delete_country', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    resultDiv.className = data.success ? 'result success' : 'result error';
                     resultDiv.innerHTML = data.message;
-                    document.getElementById('deleteCountry').value = '';
-                    refreshCountriesList();
-                } else {
+                    if (data.success) {
+                        document.getElementById('deleteCountry').value = '';
+                        refreshCountriesList();
+                    }
+                })
+                .catch(error => {
                     resultDiv.className = 'result error';
-                    resultDiv.innerHTML = data.message;
-                }
-            })
-            .catch(error => {
-                resultDiv.className = 'result error';
-                resultDiv.innerHTML = 'An error occurred. Please try again.';
-            });
+                    resultDiv.innerHTML = 'An error occurred. Please try again.';
+                });
         }
 
-        // Allow Enter key to trigger add
         document.getElementById('newCapital').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                addCapital();
-            }
+            if (e.key === 'Enter') addCapital();
         });
-
-        // Allow Enter key to trigger update
         document.getElementById('updateCapital').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                updateCapital();
-            }
+            if (e.key === 'Enter') updateCapital();
         });
-
-        // Allow Enter key to trigger delete
         document.getElementById('deleteCountry').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                deleteCountry();
-            }
+            if (e.key === 'Enter') deleteCountry();
         });
     </script>
 </body>
