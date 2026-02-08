@@ -36,6 +36,15 @@
             transition: border-color 0.3s;
         }
         input[type="text"]:focus { border-color: #667eea; }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        input[type="file"]:hover { border-color: #667eea; }
         button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -51,12 +60,8 @@
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
         }
-        button.danger {
-            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
-        }
-        button.warning {
-            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
-        }
+        button.danger { background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%); }
+        button.warning { background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); }
         .result {
             margin-top: 30px;
             padding: 20px;
@@ -117,6 +122,12 @@
             color: #555;
             font-weight: 500;
         }
+        .file-hint {
+            font-size: 12px;
+            color: #888;
+            text-align: left;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -145,6 +156,11 @@
             <div class="input-group">
                 <label for="newCapital">Capital City</label>
                 <input type="text" id="newCapital" placeholder="Enter capital city...">
+            </div>
+            <div class="input-group">
+                <label for="newImage">Capital City Image (optional)</label>
+                <input type="file" id="newImage" accept="image/*">
+                <div class="file-hint">Accepted formats: PNG, JPG, JPEG, GIF, WEBP</div>
             </div>
             <button onclick="addCapital()">Add Country</button>
             <div id="addResult" class="result"></div>
@@ -248,6 +264,7 @@
         function addCapital() {
             const country = document.getElementById('newCountry').value;
             const capital = document.getElementById('newCapital').value;
+            const imageFile = document.getElementById('newImage').files[0];
             const resultDiv = document.getElementById('addResult');
 
             if (!country.trim() || !capital.trim()) {
@@ -259,6 +276,9 @@
             const formData = new FormData();
             formData.append('country', country);
             formData.append('capital', capital);
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
 
             fetch('/add_capital', { method: 'POST', body: formData })
                 .then(response => response.json())
@@ -268,6 +288,7 @@
                     if (data.success) {
                         document.getElementById('newCountry').value = '';
                         document.getElementById('newCapital').value = '';
+                        document.getElementById('newImage').value = '';
                         refreshCountriesList();
                     }
                 })

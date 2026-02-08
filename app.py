@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import sqlite3
+import boto3
+import os
 
 app = Flask(__name__)
 
@@ -10,6 +12,14 @@ S3_BASE_URL = f'https://{S3_BUCKET}.s3.{S3_REGION}.amazonaws.com'
 
 MIN_LENGTH = 2
 MAX_LENGTH = 100
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+s3_client = boto3.client('s3', region_name=S3_REGION)
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def validate_input(value, field_name):
@@ -33,6 +43,27 @@ def get_image_url(image_key):
     if image_key:
         return f'{S3_BASE_URL}/{image_key}'
     return None
+
+
+def upload_to_s3(file, country_name):
+    """
+    Upload a file to S3 and return the image key.
+    """
+    # Create a safe filename from country name
+    safe_name = country_name.lower().replace(' ', '-')
+    extension = file.filename.rsplit('.', 1)[1].lower()
+    image_key = f'images/{safe_name}.{extension}'
+    
+    try:
+        s3_client.upload_fileobj(
+            file,
+            S3_BUCKET,
+            image_key,
+            ExtraArgs={'ContentType': file.content_type}
+        )
+        return True, image_key
+    except Exception as e:
+        return False, str(e)
 
 
 @app.route('/')
@@ -77,14 +108,17 @@ def get_countries():
 def add_capital():
     country_raw = request.form.get('country', '')
     capital_raw = request.form.get('capital', '')
+    
     valid, result = validate_input(country_raw, 'Country')
     if not valid:
         return jsonify({'success': False, 'message': result}), 400
     country = result
+    
     valid, result = validate_input(capital_raw, 'Capital')
     if not valid:
         return jsonify({'success': False, 'message': result}), 400
     capital = result
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT country, capital FROM countries WHERE LOWER(country) = LOWER(?)', (country,))
@@ -92,11 +126,30 @@ def add_capital():
     if existing:
         conn.close()
         return jsonify({'success': False, 'message': f'Country "{existing["country"]}" already exists.'}), 409
+    
+    # Handle optional image upload
+    image_key = None
+    if 'image' in request.files:
+        file = request.files['image']
+        if file and file.filename and allowed_file(file.filename):
+            success, result = upload_to_s3(file, country)
+            if success:
+                image_key = result
+            else:
+                conn.close()
+                return jsonify({'success': False, 'message': f'Image upload failed: {result}'}), 500
+        elif file and file.filename:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Invalid file type. Allowed: png, jpg, jpeg, gif, webp'}), 400
+    
     try:
-        cursor.execute('INSERT INTO countries (country, capital, image_key) VALUES (?, ?, NULL)', (country, capital))
+        cursor.execute('INSERT INTO countries (country, capital, image_key) VALUES (?, ?, ?)', (country, capital, image_key))
         conn.commit()
         conn.close()
-        return jsonify({'success': True, 'message': f'Added {country} with capital {capital}.'}), 201
+        message = f'Added {country} with capital {capital}.'
+        if image_key:
+            message += ' Image uploaded successfully.'
+        return jsonify({'success': True, 'message': message}), 201
     except sqlite3.Error as e:
         conn.close()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
