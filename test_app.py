@@ -6,6 +6,11 @@ Tests database operations and input validation.
 import pytest
 import os
 import sqlite3
+
+# Set SQLite mode BEFORE importing app
+os.environ['USE_SQLITE'] = 'true'
+os.environ['DATABASE_FILE'] = 'test_countries.db'
+
 from app import app, validate_input
 
 TEST_DATABASE = 'test_countries.db'
@@ -16,9 +21,9 @@ def client():
     """Set up a test client with a fresh test database."""
     app.config['TESTING'] = True
     
-    import app as app_module
-    original_db = app_module.DATABASE_FILE
-    app_module.DATABASE_FILE = TEST_DATABASE
+    # Remove old test database if exists
+    if os.path.exists(TEST_DATABASE):
+        os.remove(TEST_DATABASE)
     
     conn = sqlite3.connect(TEST_DATABASE)
     cursor = conn.cursor()
@@ -44,7 +49,6 @@ def client():
     with app.test_client() as client:
         yield client
     
-    app_module.DATABASE_FILE = original_db
     if os.path.exists(TEST_DATABASE):
         os.remove(TEST_DATABASE)
 
