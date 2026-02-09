@@ -44,7 +44,7 @@ def get_db_connection():
 def get_image_url(image_key):
     if image_key:
         return f'{S3_BASE_URL}/{image_key}'
-    return None
+    return f'{S3_BASE_URL}/images/placeholder.jpg'
 
 
 def resize_image(file):

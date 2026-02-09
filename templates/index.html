@@ -239,11 +239,8 @@
                     if (data.success) {
                         let html = `The capital of <strong>${data.country}</strong> is:
                                     <div class="capital-name">${data.capital}</div>`;
-                        if (data.image_url) {
-                            html += `<img src="${data.image_url}" alt="${data.capital}" class="capital-image">`;
-                        } else {
-                            html += `<div class="no-image">No image available for ${data.capital}</div>`;
-                        }
+                        
+			html += `<img src="${data.image_url}" alt="${data.capital}" class="capital-image">`;
                         resultDiv.className = 'result success';
                         resultDiv.innerHTML = html;
                     } else {
