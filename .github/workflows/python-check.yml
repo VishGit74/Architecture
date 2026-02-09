@@ -22,7 +22,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flask pytest boto3
+          pip install flask pytest boto3 pillow
+
       
       - name: Check Python syntax
         run: python -m py_compile app.py

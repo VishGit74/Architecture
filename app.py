@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 import sqlite3
 import boto3
-import os
+import io
+from PIL import Image
 
 app = Flask(__name__)
 
@@ -12,6 +13,7 @@ S3_BASE_URL = f'https://{S3_BUCKET}.s3.{S3_REGION}.amazonaws.com'
 
 MIN_LENGTH = 2
 MAX_LENGTH = 100
+MAX_IMAGE_WIDTH = 800
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
@@ -45,21 +47,49 @@ def get_image_url(image_key):
     return None
 
 
+def resize_image(file):
+    """
+    Resize image if wider than MAX_IMAGE_WIDTH.
+    Returns a BytesIO object with the resized image.
+    """
+    image = Image.open(file)
+    
+    # Convert RGBA to RGB if necessary (for JPEG compatibility)
+    if image.mode == 'RGBA':
+        background = Image.new('RGB', image.size, (255, 255, 255))
+        background.paste(image, mask=image.split()[3])
+        image = background
+    elif image.mode != 'RGB':
+        image = image.convert('RGB')
+    
+    # Resize if too wide
+    if image.width > MAX_IMAGE_WIDTH:
+        ratio = MAX_IMAGE_WIDTH / image.width
+        new_height = int(image.height * ratio)
+        image = image.resize((MAX_IMAGE_WIDTH, new_height), Image.LANCZOS)
+    
+    # Save to bytes
+    output = io.BytesIO()
+    image.save(output, format='JPEG', quality=85)
+    output.seek(0)
+    
+    return output
+
+
 def upload_to_s3(file, country_name):
     """
-    Upload a file to S3 and return the image key.
+    Resize and upload a file to S3. Returns the image key.
     """
-    # Create a safe filename from country name
     safe_name = country_name.lower().replace(' ', '-')
-    extension = file.filename.rsplit('.', 1)[1].lower()
-    image_key = f'images/{safe_name}.{extension}'
+    image_key = f'images/{safe_name}.jpg'
     
     try:
+        resized = resize_image(file)
         s3_client.upload_fileobj(
-            file,
+            resized,
             S3_BUCKET,
             image_key,
-            ExtraArgs={'ContentType': file.content_type}
+            ExtraArgs={'ContentType': 'image/jpeg'}
         )
         return True, image_key
     except Exception as e:
@@ -127,7 +157,6 @@ def add_capital():
         conn.close()
         return jsonify({'success': False, 'message': f'Country "{existing["country"]}" already exists.'}), 409
     
-    # Handle optional image upload
     image_key = None
     if 'image' in request.files:
         file = request.files['image']
