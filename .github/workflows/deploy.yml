@@ -1,0 +1,44 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install flask pytest boto3 Pillow psycopg2-binary
+
+      - name: Check syntax
+        run: python -m py_compile app.py
+
+      - name: Run tests
+        env:
+          USE_SQLITE: 'true'
+          DATABASE_FILE: 'test_countries.db'
+        run: pytest test_app.py -v
+
+  deploy:
+    needs: test
+    runs-on: self-hosted
+    steps:
+      - name: Deploy application
+        run: |
+          cd ~/Architecture
+          git pull origin dev
+          pip3 install -r requirements.txt --quiet
+          pkill -f "flask run" || true
+          sleep 2
+          nohup flask run --host=0.0.0.0 --port=5000 > flask.log 2>&1 &
+          sleep 3
+          curl -s http://localhost:5000 | grep -q "Country Capital" && echo "✓ Deployment successful!" || exit 1
