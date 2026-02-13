@@ -39,6 +39,6 @@ jobs:
           pip3 install -r requirements.txt --quiet
           pkill -f "flask run" || true
           sleep 2
-          nohup flask run --host=0.0.0.0 --port=5000 > flask.log 2>&1 &
-          sleep 3
+          setsid flask run --host=0.0.0.0 --port=5000 > ~/Architecture/flask.log 2>&1 &
+          sleep 5
           curl -s http://localhost:5000 | grep -q "Country Capital" && echo "✓ Deployment successful!" || exit 1
