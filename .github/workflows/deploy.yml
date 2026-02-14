@@ -1,8 +1,8 @@
-name: Deploy to EC2
+name: Deploy
 
 on:
   push:
-    branches: [dev]
+    branches: [dev, main]
   workflow_dispatch:
 
 jobs:
@@ -28,15 +28,32 @@ jobs:
           DATABASE_FILE: 'test_countries.db'
         run: pytest test_app.py -v
 
-  deploy:
+  deploy-staging:
     needs: test
+    if: github.ref == 'refs/heads/dev'
     runs-on: self-hosted
     steps:
-      - name: Deploy application
+      - name: Deploy to Staging
+        run: |
+          cd ~/Architecture-staging
+          git pull origin dev
+          pip3 install -r requirements.txt --quiet
+          sudo systemctl restart flask-staging
+          sleep 3
+          curl -s http://localhost:5001 | grep -q "Country Capital" && echo "✓ Staging deployment successful!" || exit 1
+          echo "Staging URL: http://54.89.187.42:5001"
+
+  deploy-production:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    steps:
+      - name: Deploy to Production
         run: |
           cd ~/Architecture
-          git pull origin dev
+          git pull origin main
           pip3 install -r requirements.txt --quiet
           sudo systemctl restart flask-app
           sleep 3
-          curl -s http://localhost:5000 | grep -q "Country Capital" && echo "✓ Deployment successful!" || exit 1
+          curl -s http://localhost:5000 | grep -q "Country Capital" && echo "✓ Production deployment successful!" || exit 1
+          echo "Production URL: http://54.89.187.42:5000"
