@@ -41,7 +41,6 @@ jobs:
           sudo systemctl restart flask-staging
           sleep 3
           curl -s http://localhost:5001 | grep -q "Country Capital" && echo "✓ Staging deployment successful!" || exit 1
-          echo "Staging URL: http://54.89.187.42:5001"
 
   deploy-production:
     needs: test
@@ -56,4 +55,53 @@ jobs:
           sudo systemctl restart flask-app
           sleep 3
           curl -s http://localhost:5000 | grep -q "Country Capital" && echo "✓ Production deployment successful!" || exit 1
-          echo "Production URL: http://54.89.187.42:5000"
+
+  notify-success:
+    needs: [deploy-staging, deploy-production]
+    if: always() && (needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send success email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "✅ Deployment Successful - ${{ github.ref_name }}"
+          to: ${{ secrets.EMAIL_USERNAME }}
+          from: GitHub Actions
+          body: |
+            Deployment completed successfully!
+            
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Message: ${{ github.event.head_commit.message }}
+            
+            URLs:
+            - Staging: http://54.89.187.42:5001
+            - Production: http://54.89.187.42:5000
+
+  notify-failure:
+    needs: [test, deploy-staging, deploy-production]
+    if: always() && (needs.test.result == 'failure' || needs.deploy-staging.result == 'failure' || needs.deploy-production.result == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send failure email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "❌ Deployment Failed - ${{ github.ref_name }}"
+          to: ${{ secrets.EMAIL_USERNAME }}
+          from: GitHub Actions
+          body: |
+            Deployment failed!
+            
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Message: ${{ github.event.head_commit.message }}
+            
+            Check the logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
