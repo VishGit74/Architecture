@@ -28,21 +28,7 @@ jobs:
           DATABASE_FILE: 'test_countries.db'
         run: pytest test_app.py -v
 
-  deploy-staging:
-    needs: test
-    if: github.ref == 'refs/heads/dev'
-    runs-on: self-hosted
-    steps:
-      - name: Deploy to Staging
-        run: |
-          cd ~/Architecture-staging
-          git pull origin dev
-          pip3 install -r requirements.txt --quiet
-          sudo systemctl restart flask-staging
-          sleep 3
-          curl -s http://localhost:5001 | grep -q "Country Capital" && echo "✓ Staging deployment successful!" || exit 1
-
-  deploy-production:
+  deploy:
     needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: self-hosted
@@ -52,13 +38,13 @@ jobs:
           cd ~/Architecture
           git pull origin main
           pip3 install -r requirements.txt --quiet
-          sudo systemctl restart flask-app
+          sudo systemctl restart gunicorn-app
           sleep 3
-          curl -s http://localhost:5000 | grep -q "Country Capital" && echo "✓ Production deployment successful!" || exit 1
+          curl -s http://localhost:8000 | grep -q "Country Capital" && echo "✓ Deployment successful!" || exit 1
 
   notify-success:
-    needs: [deploy-staging, deploy-production]
-    if: always() && (needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success')
+    needs: deploy
+    if: success()
     runs-on: ubuntu-latest
     steps:
       - name: Send success email
@@ -78,13 +64,11 @@ jobs:
             Commit: ${{ github.sha }}
             Message: ${{ github.event.head_commit.message }}
             
-            URLs:
-            - Staging: http://54.89.187.42:5001
-            - Production: http://54.89.187.42:5000
+            URL: http://54.89.187.42
 
   notify-failure:
-    needs: [test, deploy-staging, deploy-production]
-    if: always() && (needs.test.result == 'failure' || needs.deploy-staging.result == 'failure' || needs.deploy-production.result == 'failure')
+    needs: [test, deploy]
+    if: failure()
     runs-on: ubuntu-latest
     steps:
       - name: Send failure email
@@ -102,6 +86,5 @@ jobs:
             
             Branch: ${{ github.ref_name }}
             Commit: ${{ github.sha }}
-            Message: ${{ github.event.head_commit.message }}
             
             Check the logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

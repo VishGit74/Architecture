@@ -2,3 +2,4 @@ flask
 boto3
 Pillow
 psycopg2-binary
+gunicorn
